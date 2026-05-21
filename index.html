@@ -552,7 +552,7 @@ function downloadResults(){
   URL.revokeObjectURL(url);
 }
 
-// ━━ ENVIO PARA GOOGLE SHEETS ━━
+// ━━ ENVIO PARA GOOGLE SHEETS (via formulário oculto — bypass CORS) ━━
 function sendToSheets(wasAbandoned,hits,total,pct){
   var area=document.getElementById('sheets-status-area');
   if(!area)return;
@@ -564,6 +564,15 @@ function sendToSheets(wasAbandoned,hits,total,pct){
 
   area.innerHTML='<div class="sheets-status sending">📨 Enviando resultados para a planilha do professor...</div>';
 
+  // Buscar IP do aluno e depois enviar tudo
+  fetch('https://api.ipify.org?format=json').then(function(r){return r.json();}).then(function(ipData){
+    submitToSheets(ipData.ip,wasAbandoned,hits,total,pct,area);
+  }).catch(function(){
+    submitToSheets('N/A',wasAbandoned,hits,total,pct,area);
+  });
+}
+
+function submitToSheets(ip,wasAbandoned,hits,total,pct,area){
   var now=new Date();
   var payload={
     timestamp: now.toISOString(),
@@ -576,6 +585,7 @@ function sendToSheets(wasAbandoned,hits,total,pct){
     acertos: hits,
     total: total,
     percentual: pct,
+    ip: ip,
     questoes: APP.answers.map(function(a,i){
       return {
         numero: i+1,
@@ -589,16 +599,27 @@ function sendToSheets(wasAbandoned,hits,total,pct){
     })
   };
 
-  fetch(GOOGLE_SHEETS_URL,{
-    method:'POST',
-    redirect:'follow',
-    body:JSON.stringify(payload)
-  }).then(function(){
-    area.innerHTML='<div class="sheets-status sent">✅ Resultados registrados na planilha do professor.</div>';
-  }).catch(function(err){
-    console.error('Sheets error:',err);
-    area.innerHTML='<div class="sheets-status error">❌ Erro ao enviar para a planilha. Baixe suas respostas acima e envie ao professor.</div>';
-  });
+  // Iframe oculto para receber o POST sem navegar
+  var iframeName='sheets-iframe-'+Date.now();
+  var iframe=document.createElement('iframe');
+  iframe.name=iframeName;iframe.style.display='none';
+  document.body.appendChild(iframe);
+
+  // Formulário oculto — sem restrição de CORS
+  var form=document.createElement('form');
+  form.method='POST';form.action=GOOGLE_SHEETS_URL;form.target=iframeName;
+  var input=document.createElement('input');
+  input.type='hidden';input.name='data';input.value=JSON.stringify(payload);
+  form.appendChild(input);
+  document.body.appendChild(form);
+  form.submit();
+  document.body.removeChild(form);
+
+  // Feedback após breve espera (form submit não retorna promise)
+  setTimeout(function(){
+    area.innerHTML='<div class="sheets-status sent">✅ Resultados enviados para a planilha do professor.</div>';
+    try{document.body.removeChild(iframe);}catch(e){}
+  },3000);
 }
 
 // ━━ BEFOREUNLOAD ━━
