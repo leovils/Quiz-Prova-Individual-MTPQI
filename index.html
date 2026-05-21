@@ -629,7 +629,7 @@ function showThemes(){
   });
   $app().innerHTML = '<div class="quiz-header"><h1>Quiz MTPQI</h1>' +
     '<h2>Bem-vindo(a), '+APP.student.name.split(' ')[0]+'!</h2>' +
-    '<p class="subtitle">Escolha um reino para iniciar. Serão sorteadas 10 perguntas — 30 segundos cada.</p></div>' +
+    '<p class="subtitle">Escolha um reino para iniciar. Serão sorteadas 10 perguntas — 60 segundos cada.</p></div>' +
     '<div class="realm-count">14 Reinos · 280 Questões</div>' +
     html +
     '<div class="signature">Prof. Dr. Leonardo Vils · PPGA · UNINOVE · MTPQI · 2026</div>';
@@ -660,23 +660,23 @@ function renderQuestion(){
   }).join('');
   $app().innerHTML =
     '<div class="quiz-progress"><div class="qp-label">⚔️ Questão '+(APP.current+1)+'/'+APP.questions.length+'</div><div class="qp-bar-bg"><div class="qp-bar-fill" style="width:'+pct+'%"></div></div><div class="qp-count">'+APP.theme.title.split(':')[0]+'</div></div>' +
-    '<div class="timer-display" id="timer-text">⏱️ 30s</div>' +
+    '<div class="timer-display" id="timer-text">⏱️ 60s</div>' +
     '<div class="timer-bar"><div class="timer-fill" id="timer-fill" style="width:100%"></div></div>' +
     '<div class="question-card"><div class="q-number">Desafio '+(APP.current+1)+' <span class="q-difficulty '+q.difficulty+'">'+diffLabel+'</span></div><div class="q-text">'+q.text+'</div><div class="options-grid" id="options-area">'+optionsHTML+'</div><div id="feedback-area"></div></div>' +
     '<div style="text-align:center;margin-top:12px"><button class="btn-back" onclick="abandonQuiz()">🚪 Sair do Quiz</button></div>';
-  APP.timeLeft=30;startTimer();
+  APP.timeLeft=60;startTimer();
 }
 
 function startTimer(){
   clearInterval(APP.timer);
   APP.timer=setInterval(function(){
     APP.timeLeft--;
-    var pct=(APP.timeLeft/30)*100;
+    var pct=(APP.timeLeft/60)*100;
     var fill=document.getElementById('timer-fill');var text=document.getElementById('timer-text');
     if(!fill||!text){clearInterval(APP.timer);return;}
     fill.style.width=pct+'%';text.textContent='⏱️ '+APP.timeLeft+'s';
-    if(APP.timeLeft<=5){fill.className='timer-fill danger';text.className='timer-display danger';}
-    else if(APP.timeLeft<=10){fill.className='timer-fill warning';text.className='timer-display warning';}
+    if(APP.timeLeft<=10){fill.className='timer-fill danger';text.className='timer-display danger';}
+    else if(APP.timeLeft<=20){fill.className='timer-fill warning';text.className='timer-display warning';}
     if(APP.timeLeft<=0){clearInterval(APP.timer);timeoutQuestion();}
   },1000);
 }
